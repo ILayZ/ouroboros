@@ -379,5 +379,40 @@ def get_tools() -> List[ToolEntry]:
             timeout_sec=60,
         ),
         ToolEntry(
-        # ... (truncated) ...
+            name='browser_action',
+            schema={
+                'name': 'browser_action',
+                'description': (
+                    'Perform action on current browser page. Actions: click (selector), '
+                    'fill (selector + value), select (selector + value), '
+                    'screenshot (base64 PNG), evaluate (JS code in value), '
+                    'scroll (value: up/down/top/bottom).'
+                ),
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'action': {
+                            'type': 'string',
+                            'enum': ['click', 'fill', 'select', 'screenshot', 'evaluate', 'scroll'],
+                            'description': 'Action to perform',
+                        },
+                        'selector': {
+                            'type': 'string',
+                            'description': 'CSS selector for click/fill/select',
+                        },
+                        'value': {
+                            'type': 'string',
+                            'description': 'Value for fill/select, JS for evaluate, direction for scroll',
+                        },
+                        'timeout': {
+                            'type': 'integer',
+                            'description': 'Action timeout in ms (default: 5000)',
+                        },
+                    },
+                    'required': ['action'],
+                },
+            },
+            handler=_browser_action,
+            timeout_sec=15,
+        ),
     ]
