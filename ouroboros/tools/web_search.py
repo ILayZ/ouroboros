@@ -2,7 +2,7 @@ import os
 import json
 import httpx
 from typing import Dict, List
-from .base import ToolBase
+from .registry import ToolBase
 
 class WebSearch(ToolBase):
     name = 'web_search'
