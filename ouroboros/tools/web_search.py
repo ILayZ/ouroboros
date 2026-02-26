@@ -2,7 +2,7 @@ import os
 import json
 import httpx
 from typing import Dict, List
-from .core import ToolBase, ToolEntry
+from ouroboros.tools.registry import ToolBase, ToolEntry  # FIXED IMPORT PATH
 
 class WebSearch(ToolBase):
     name = 'web_search'
