@@ -2,7 +2,7 @@ import os
 import json
 import httpx
 from typing import Dict, List
-from ouroboros.tools.registry import ToolBase, ToolEntry
+from .registry import ToolBase, ToolEntry
 
 
 class WebSearch(ToolBase):
