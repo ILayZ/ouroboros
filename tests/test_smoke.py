@@ -1,1 +1,122 @@
-"""Smoke test suite for Ouroboros.\n\nTests core invariants:\n- All modules import cleanly\n- Tool registry discovers all expected tools\n- ... (rest of content unchanged)\n"""\nimport ast\nimport os\nimport pathlib\nimport re\nimport sys\nimport tempfile\n\nimport pytest\n\nREPO = pathlib.Path(__file__).resolve().parent.parent\n\n# ── Module imports ───────────────────────────────────────────────\n\nCORE_MODULES = [\n    \"ouroboros.agent\",\n    \"ouroboros.context\",\n    \"ouroboros.loop\",\n    \"ouroboros.llm\",\n    \"ouroboros.memory\",\n    \"ouroboros.review\",\n    \"ouroboros.utils\",\n    \"ouroboros.consciousness\",\n]\n\nTOOL_MODULES = [\n    \"ouroboros.tools.registry\",\n    \"ouroboros.tools.core\",\n    \"ouroboros.tools.git\",\n    \"ouroboros.tools.shell\",\n    # REMOVED: \"ouroboros.tools.search\", (DEPRECATED)\n    \"ouroboros.tools.control\",\n    \"ouroboros.tools.browser\",\n    \"ouroboros.tools.review\",\n    \"ouroboros.tools.web_search\",\n]\n\nSUPERVISOR_MODULES = [\n    \"supervisor.state\",\n    \"supervisor.telegram\",\n    \"supervisor.queue\",\n    \"supervisor.workers\",\n    \"supervisor.git_ops\",\n    \"supervisor.events\",\n]\n\n\n@pytest.mark.parametrize(\"module\", CORE_MODULES + TOOL_MODULES + SUPERVISOR_MODULES)\ndef test_import(module):\n    \"\"\"Every module imports without error.\"\"\"\n    __import__(module)\n\n\n# ── Tool registry ────────────────────────────────────────────────\n\n@pytest.fixture\ndef registry():\n    from ouroboros.tools.registry import ToolRegistry\n    tmp = pathlib.Path(tempfile.mkdtemp())\n    return ToolRegistry(repo_dir=tmp, drive_root=tmp)\n\ndef test_tool_set_matches(registry):\n    \"\"\"Tool registry contains exactly the expected tools (no more, no less).\"\"\"\n    schemas = registry.schemas()\n    actual_tools = {t[\"function\"][\"name\"] for t in schemas}\n    expected_tools = set(EXPECTED_TOOLS)\n\n    missing = expected_tools - actual_tools\n    extra = actual_tools - expected_tools\n\n    assert missing == set(), f\"Missing tools: {sorted(missing)}\"\n    assert extra == set(), f\"Extra tools: {sorted(extra)}\"\n    assert actual_tools == expected_tools, \"Tool set mismatch\"\n\n\nEXPECTED_TOOLS = [\n    \"repo_read\", \"repo_write_commit\", \"repo_list\", \"repo_commit_push\",\n    \"drive_read\", \"drive_write\", \"drive_list\",\n    \"git_status\", \"git_diff\",\n    \"run_shell\", \"claude_code_edit\",\n    \"browse_page\", \"browser_action\",\n    \"web_search\",\n    \"chat_history\", \"update_scratchpad\", \"update_identity\",\n    \"request_restart\", \"promote_to_stable\", \"request_review\",\n    \"schedule_task\", \"cancel_task\",\n    \"switch_model\", \"toggle_evolution\", \"toggle_consciousness\",\n    \"send_owner_message\", \"send_photo\",\n    \"codebase_digest\", \"codebase_health\",\n    \"knowledge_read\", \"knowledge_write\", \"knowledge_list\",\n    \"multi_model_review\",\n    # GitHub Issues\n    \"list_github_issues\", \"get_github_issue\", \"comment_on_issue\",\n    \"close_github_issue\", \"create_github_issue\",\n    \"summarize_dialogue\",\n    # Task decomposition\n    \"get_task_result\", \"wait_for_task\",\n    \"generate_evolution_stats\",\n    # VLM / Vision\n    \"analyze_screenshot\", \"vlm_query\",\n    # Message routing\n    \"forward_to_worker\",\n    # Context management\n    \"compact_context\",\n    \"list_available_tools\",\n    \"enable_tools\",\n]\n\n\n@pytest.mark.parametrize(\"tool_name\", EXPECTED_TOOLS)\ndef test_tool_registered(registry, tool_name):\n    \"\"\"Each expected tool is in the registry.\"\"\"\n    available = [t[\"function\"][\"name\"] for t in registry.schemas()]\n    assert tool_name in available, f\"{tool_name} not in registry\"\n\n\n# ... (rest of test file remains unchanged)"
+"""Smoke test suite for Ouroboros.
+
+Tests core invariants:
+- All modules import cleanly
+- Tool registry discovers all expected tools
+- ...
+"""
+import ast
+import os
+import pathlib
+import re
+import sys
+import tempfile
+
+import pytest
+
+REPO = pathlib.Path(__file__).resolve().parent.parent
+
+# ── Module imports ───────────────────────────────────────────────
+
+CORE_MODULES = [
+    "ouroboros.agent",
+    "ouroboros.context",
+    "ouroboros.loop",
+    "ouroboros.llm",
+    "ouroboros.memory",
+    "ouroboros.review",
+    "ouroboros.utils",
+    "ouroboros.consciousness",
+]
+
+TOOL_MODULES = [
+    "ouroboros.tools.registry",
+    "ouroboros.tools.core",
+    "ouroboros.tools.git",
+    "ouroboros.tools.shell",
+    # REMOVED: "ouroboros.tools.search", (DEPRECATED)
+    "ouroboros.tools.control",
+    "ouroboros.tools.browser",
+    "ouroboros.tools.review",
+    "ouroboros.tools.web_search",
+]
+
+SUPERVISOR_MODULES = [
+    "supervisor.state",
+    "supervisor.telegram",
+    "supervisor.queue",
+    "supervisor.workers",
+    "supervisor.git_ops",
+    "supervisor.events",
+]
+
+
+@pytest.mark.parametrize("module", CORE_MODULES + TOOL_MODULES + SUPERVISOR_MODULES)
+def test_import(module):
+    """Every module imports without error."""
+    __import__(module)
+
+
+# ── Tool registry ────────────────────────────────────────────────
+
+@pytest.fixture
+def registry():
+    from ouroboros.tools.registry import ToolRegistry
+    tmp = pathlib.Path(tempfile.mkdtemp())
+    return ToolRegistry(repo_dir=tmp, drive_root=tmp)
+
+def test_tool_set_matches(registry):
+    """Tool registry contains exactly the expected tools (no more, no less)."""
+    schemas = registry.schemas()
+    actual_tools = {t["function"]["name"] for t in schemas}
+    expected_tools = set(EXPECTED_TOOLS)
+
+    missing = expected_tools - actual_tools
+    extra = actual_tools - expected_tools
+
+    assert missing == set(), f"Missing tools: {sorted(missing)}"
+    assert extra == set(), f"Extra tools: {sorted(extra)}"
+    assert actual_tools == expected_tools, "Tool set mismatch"
+
+
+EXPECTED_TOOLS = [
+    "repo_read", "repo_write_commit", "repo_list", "repo_commit_push",
+    "drive_read", "drive_write", "drive_list",
+    "git_status", "git_diff",
+    "run_shell", "claude_code_edit",
+    "browse_page", "browser_action",
+    "web_search",
+    "chat_history", "update_scratchpad", "update_identity",
+    "request_restart", "promote_to_stable", "request_review",
+    "schedule_task", "cancel_task",
+    "switch_model", "toggle_evolution", "toggle_consciousness",
+    "send_owner_message", "send_photo",
+    "codebase_digest", "codebase_health",
+    "knowledge_read", "knowledge_write", "knowledge_list",
+    "multi_model_review",
+    # GitHub Issues
+    "list_github_issues", "get_github_issue", "comment_on_issue",
+    "close_github_issue", "create_github_issue",
+    "summarize_dialogue",
+    # Task decomposition
+    "get_task_result", "wait_for_task",
+    "generate_evolution_stats",
+    # VLM / Vision
+    "analyze_screenshot", "vlm_query",
+    # Message routing
+    "forward_to_worker",
+    # Context management
+    "compact_context",
+    "list_available_tools",
+    "enable_tools",
+]
+
+
+@pytest.mark.parametrize("tool_name", EXPECTED_TOOLS)
+def test_tool_registered(registry, tool_name):
+    """Each expected tool is in the registry."""
+    available = [t["function"]["name"] for t in registry.schemas()]
+    assert tool_name in available, f"{tool_name} not in registry"
+
+
+# ... rest of tests remain unchanged
