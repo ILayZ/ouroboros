@@ -2,7 +2,8 @@ import os
 import json
 import httpx
 from typing import Dict, List
-from ouroboros.tools.registry import ToolBase, ToolEntry  # FIXED IMPORT PATH
+from .registry import ToolBase, ToolEntry
+
 
 class WebSearch(ToolBase):
     name = 'web_search'
@@ -40,33 +41,39 @@ class WebSearch(ToolBase):
         response.raise_for_status()
         return response.json()
 
-    def run(self, query: str) -> Dict:
+    def run(self, query: str) -> str:
         try:
             # Primary: DuckDuckGo (500 req/day)
             result = self._duckduckgo_search(query)
-            return {
-                'results': result.get('Results', [])[:3],
+            formatted_results = [{
+                'title': item.get('Text', ''),
+                'snippet': item.get('FirstURL', ''),
+                'url': item.get('FirstURL', '')
+            } for item in result.get('Results', [])[:3]]
+            return json.dumps({
+                'results': formatted_results,
                 'source': 'duckduckgo'
-            }
+            }, ensure_ascii=False)
         except Exception as e:
             if 'GOOGLE_API_KEY' in str(e):
                 raise
             # Fallback: Google Programmable Search (100 free req/day)
             try:
                 google_result = self._google_search(query)
-                return {
-                    'results': [{
-                        'title': i['title'],
-                        'snippet': i['snippet'],
-                        'url': i['link']
-                    } for i in google_result.get('items', [])[:3]],
+                formatted_results = [{
+                    'title': i['title'],
+                    'snippet': i['snippet'],
+                    'url': i['link']
+                } for i in google_result.get('items', [])[:3]]
+                return json.dumps({
+                    'results': formatted_results,
                     'source': 'google'
-                }
+                }, ensure_ascii=False)
             except Exception as fallback_error:
-                return {
+                return json.dumps({
                     'error': str(fallback_error),
                     'suggestion': 'Configure GOOGLE_API_KEY and GOOGLE_CX for fallback search'
-                }
+                }, ensure_ascii=False)
 
 def get_tools() -> List[ToolEntry]:
     return [
