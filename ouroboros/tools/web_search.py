@@ -45,7 +45,7 @@ class WebSearch(ToolBase):
             # Primary: DuckDuckGo (500 req/day)
             result = self._duckduckgo_search(query)
             return {
-                'results': result.get('results', [])[:3],
+                'results': result.get('Results', [])[:3],  # FIX: Capitalized 'Results' per API spec
                 'source': 'duckduckgo'
             }
         except Exception as e:
