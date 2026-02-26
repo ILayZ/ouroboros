@@ -1,8 +1,8 @@
 import os
 import json
 import httpx
-from typing import Dict, List, Callable
-from .base import ToolBase, ToolEntry
+from typing import Dict, List
+from .core import ToolBase, ToolEntry
 
 class WebSearch(ToolBase):
     name = 'web_search'
